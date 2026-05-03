@@ -76,7 +76,7 @@ function getScene1Main() {
     <text x="362" y="198" text-anchor="middle" font-family="Georgia" font-size="13" fill="#7B4019">13</text>
     <text x="402" y="198" text-anchor="middle" font-family="Georgia" font-size="13" fill="#7B4019">14</text>
     <text x="162" y="238" text-anchor="middle" font-family="Georgia" font-size="13" fill="#7B4019">15</text>
-    <g data-clickable="true" data-target="scene1sub" role="button" aria-label="Click the circled date">
+    <g data-clickable="true" data-target="scene1sub" role="button" aria-label="Click the circled date" data-testid="step-1-hotspot">
       <circle cx="202" cy="233" r="16" fill="#F0A868" opacity="0.35"/>
       <text x="202" y="238" text-anchor="middle" font-family="Georgia" font-size="14" fill="#E8622A" font-weight="bold">16</text>
       <rect x="186" y="220" width="32" height="26" class="clickable-hint" rx="3"/>
@@ -186,7 +186,7 @@ function getScene2Main() {
     <rect x="439" y="342" width="6" height="35" fill="#7B4019"/>
 
     <!-- Form stack - clickable -->
-    <g data-clickable="true" data-target="scene2sub" role="button" aria-label="Click the form stack">
+    <g data-clickable="true" data-target="scene2sub" role="button" aria-label="Click the form stack" data-testid="step-2-hotspot">
       <rect x="210" y="198" width="100" height="44" fill="#FFF5C8" stroke="#7B4019" stroke-width="1"/>
       <rect x="214" y="194" width="100" height="44" fill="#FFF5C8" stroke="#7B4019" stroke-width="1"/>
       <rect x="218" y="190" width="100" height="44" fill="#FFF5C8" stroke="#7B4019" stroke-width="1"/>

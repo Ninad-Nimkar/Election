@@ -12,7 +12,7 @@ function getScene3Main() {
     <rect x="50" y="370" width="460" height="20" fill="#C49A6C" stroke="#7B4019" stroke-width="1"/>
 
     <!-- Poster - clickable -->
-    <g data-clickable="true" data-target="scene3sub" role="button" aria-label="Click the poster">
+    <g data-clickable="true" data-target="scene3sub" role="button" aria-label="Click the poster" data-testid="step-3-hotspot">
       <rect x="100" y="100" width="150" height="190" fill="#FFF5C8" stroke="#7B4019" stroke-width="1.2"/>
       <line x1="120" y1="150" x2="230" y2="150" stroke="#C49A6C" stroke-width="0.8"/>
       <line x1="120" y1="170" x2="220" y2="170" stroke="#C49A6C" stroke-width="0.8"/>
@@ -95,7 +95,7 @@ function getScene4Layer1() {
     <line x1="385" y1="140" x2="455" y2="140" stroke="#7B4019" stroke-width="0.8"/>
 
     <!-- Booth - clickable (CENTERED) -->
-    <g data-clickable="true" data-target="scene4layer2" role="button" aria-label="Enter the booth">
+    <g data-clickable="true" data-target="scene4layer2" role="button" aria-label="Enter the booth" data-testid="step-4-booth-door">
       <rect x="230" y="180" width="100" height="160" fill="#F0A868" stroke="#7B4019" stroke-width="1.2"/>
       <path d="M236,180 C240,230 234,290 238,340" stroke="#7B4019" stroke-width="0.6" fill="none"/>
       <path d="M260,180 C264,230 258,290 262,340" stroke="#7B4019" stroke-width="0.6" fill="none"/>
@@ -147,7 +147,7 @@ function getScene4Layer2() {
     <rect x="430" y="264" width="10" height="80" fill="#7B4019"/>
 
     <!-- EVM SET - clickable -->
-    <g data-clickable="true" data-target="scene4layer3" role="button" aria-label="Use the EVM">
+    <g data-clickable="true" data-target="scene4layer3" role="button" aria-label="Use the EVM" data-testid="step-4-evm">
 
       <!-- LEFT: Ballot Unit (flat horizontal panel) -->
       <rect x="110" y="160" width="155" height="90" fill="#FAEBD7" stroke="#7B4019" stroke-width="1.5" rx="4"/>

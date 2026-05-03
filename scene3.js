@@ -31,7 +31,7 @@ function getScene5Main() {
     <rect x="340" y="158" width="22" height="16" fill="#FFF5C8" stroke="#7B4019" stroke-width="0.8"/>
 
     <!-- Tally board - clickable -->
-    <g data-clickable="true" data-target="scene5sub" role="button" aria-label="View the tally board">
+    <g data-clickable="true" data-target="scene5sub" role="button" aria-label="View the tally board" data-testid="step-5-hotspot">
       <rect x="200" y="260" width="160" height="100" fill="#FFF5C8" stroke="#7B4019" stroke-width="1.2"/>
       <text x="220" y="285" font-family="Georgia" font-size="13" fill="#7B4019">||||</text>
       <text x="220" y="305" font-family="Georgia" font-size="13" fill="#E8622A">|||| ||</text>
@@ -111,7 +111,7 @@ function getScene6Main() {
     <text x="187" y="172" text-anchor="middle" font-family="Georgia" font-size="13" fill="#7B4019">▲</text>
 
     <!-- Tallest bar - clickable -->
-    <g data-clickable="true" data-target="scene6sub" role="button" aria-label="View results certificate">
+    <g data-clickable="true" data-target="scene6sub" role="button" aria-label="View results certificate" data-testid="step-6-hotspot">
       <rect x="252" y="120" width="50" height="156" fill="#E8622A" rx="3"/>
       <text x="277" y="112" text-anchor="middle" font-family="Georgia" font-size="13" fill="#E8622A">●</text>
       <text x="277" y="286" text-anchor="middle" font-family="Georgia" font-size="13" fill="#E8622A" font-weight="bold">WINNER</text>
@@ -198,7 +198,7 @@ function getScene7Main() {
     <rect x="260" y="168" width="40" height="66" fill="#7B4019" rx="4"/>
 
     <!-- Right hand raised - clickable -->
-    <g data-clickable="true" data-target="scene7sub" role="button" aria-label="Take the oath">
+    <g data-clickable="true" data-target="scene7sub" role="button" aria-label="Take the oath" data-testid="step-7-hotspot">
       <path d="M300,170 L322,130 L332,127 L330,136 L320,140 L304,177" fill="#C49A6C" stroke="#7B4019" stroke-width="1.2"/>
       <rect x="298" y="115" width="42" height="68" class="clickable-hint" rx="3"/>
     </g>

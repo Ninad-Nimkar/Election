@@ -1,57 +1,113 @@
 // ═══════════════════════════════════════════
-// Election Explainer — Core App Logic v2
-// Cursor hints · zoom transitions · scroll
+// Election Explainer — Core App Logic v3
+// Sections: Constants, Debug, Render, Cursors,
+// Transitions, Navigation, Animations, Observer,
+// Analytics, Boot
 // ═══════════════════════════════════════════
 
 (function () {
   'use strict';
 
-  const S = window.SceneData;
-  let transitioning = false;
+  // ═══ CONSTANTS ═══
+  var DEBUG = false; // Set true for development logging
+  var CONFETTI_COUNT = 20;
+  var FLOAT_BOB_DUR = '2.5s';
 
-  // ── Initialize all scenes ──
-  function initScenes() {
-    for (let i = 1; i <= 7; i++) {
-      const svg = document.getElementById('scene-' + i);
-      if (!svg) continue;
-      const key = 'scene' + i;
-      if (S[key] && S[key].main) {
-        svg.innerHTML = S[key].main();
-      }
-    }
-    bindAllClickables();
-    positionAllCursors();
+  // Scene metadata — SVG content functions live in scene1.js, scene2.js, scene3.js
+  // and register on window.SceneData. This array holds display metadata only.
+  var SCENES = [
+    { id: 1, key: 'scene1', title: 'Election Announcement', hint: 'Tap the circled date to continue',   svgTitle: 'Calendar showing March 2026 with election date circled' },
+    { id: 2, key: 'scene2', title: 'Nominations',           hint: 'Tap the form stack to continue',     svgTitle: 'District office desk with nomination form stack' },
+    { id: 3, key: 'scene3', title: 'Campaign Period',       hint: 'Tap the poster to continue',         svgTitle: 'Street wall with election campaign poster and crowd' },
+    { id: 4, key: 'scene4', title: 'Voting Day',            hint: 'Tap the booth to enter',             svgTitle: 'Polling station building with voting booth' },
+    { id: 5, key: 'scene5', title: 'Vote Counting',         hint: 'Tap the tally board to continue',    svgTitle: 'Counting centre with officials and tally board' },
+    { id: 6, key: 'scene6', title: 'Results Declared',      hint: 'Tap the winning bar to continue',    svgTitle: 'Television showing election results bar chart' },
+    { id: 7, key: 'scene7', title: 'Oath of Office',        hint: 'Tap the raised hand to complete',    svgTitle: 'Elected representative taking oath at podium' }
+  ];
+
+  var S = window.SceneData;
+  var transitioning = false;
+  var renderedScenes = {};
+
+  // ═══ DEBUG ═══
+  function log(msg) {
+    if (DEBUG) console.log('[Election App] ' + msg);
   }
 
-  // ── Bind click handlers ──
-  function bindAllClickables() {
-    document.querySelectorAll('[data-clickable]').forEach(function (el) {
+  // ═══ RENDER FUNCTIONS ═══
+
+  // Render a scene's main SVG content (lazy — only when needed)
+  function renderScene(stepNum) {
+    if (stepNum < 1 || stepNum > 7) return;
+    if (renderedScenes[stepNum]) return;
+    var svg = document.getElementById('scene-' + stepNum);
+    if (!svg) return;
+    var meta = SCENES[stepNum - 1];
+    var data = S[meta.key];
+    if (!data || !data.main) return;
+
+    // Safety note: innerHTML is used here with hardcoded SVG content only.
+    // No user-controlled or external data is ever injected.
+    var titleEl = svg.querySelector('title');
+    var titleHTML = titleEl ? '' : '<title id="scene-' + stepNum + '-title">' + meta.svgTitle + '</title>';
+    svg.innerHTML = titleHTML + data.main();
+
+    renderedScenes[stepNum] = true;
+    log('Rendered scene ' + stepNum);
+    bindClickablesIn(svg);
+    positionCursorsIn(svg);
+  }
+
+  // ═══ CLICK HANDLERS ═══
+
+  function bindClickablesIn(container) {
+    container.querySelectorAll('[data-clickable]').forEach(function (el) {
       if (el._bound) return;
       el._bound = true;
+
+      // Accessibility: make focusable and keyboard-activatable
+      el.setAttribute('tabindex', '0');
+
+      // Testing: add data-testid if not present
+      if (!el.dataset.testid) {
+        var svg = el.closest('svg');
+        var stepNum = svg ? svg.id.replace('scene-', '') : '0';
+        var target = el.dataset.target || 'hotspot';
+        el.dataset.testid = 'step-' + stepNum + '-' + target;
+      }
+
       el.addEventListener('click', function (e) {
         e.stopPropagation();
         if (transitioning) return;
-        const target = el.getAttribute('data-target');
+        var target = el.getAttribute('data-target');
         if (target) handleClick(el, target);
+      });
+
+      // Keyboard: Enter or Space activates
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          if (transitioning) return;
+          var target = el.getAttribute('data-target');
+          if (target) handleClick(el, target);
+        }
       });
     });
   }
 
-  // ── Position floating cursor hints (inside SVG so they float with it) ──
-  function positionAllCursors() {
-    // Remove old cursors
-    document.querySelectorAll('.cursor-hint-svg').forEach(function (c) { c.remove(); });
+  // ═══ CURSOR POSITIONING ═══
 
-    document.querySelectorAll('.scene-graphic [data-clickable]').forEach(function (el) {
+  function positionCursorsIn(container) {
+    container.querySelectorAll('[data-clickable]').forEach(function (el) {
       var svg = el.closest('svg');
       if (!svg) return;
-
       var hintEl = el.querySelector('.clickable-hint') || el;
 
       try {
         var bbox = hintEl.getBBox();
         var cx = bbox.x + bbox.width / 2;
-        var cy = bbox.y + 45; // fingertip touches top edge of clickable
+        var cy = bbox.y + 45;
 
         var cursor = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         cursor.setAttribute('class', 'cursor-hint-svg');
@@ -60,15 +116,15 @@
         cursor.setAttribute('text-anchor', 'middle');
         cursor.setAttribute('font-size', '28');
         cursor.setAttribute('pointer-events', 'none');
-        cursor.setAttribute('style', 'filter: drop-shadow(0 2px 4px rgba(123,64,25,0.3))');
-        cursor.textContent = '👆';
+        cursor.setAttribute('aria-hidden', 'true');
+        cursor.setAttribute('data-testid', 'cursor-step-' + svg.id.replace('scene-', ''));
+        cursor.textContent = '\u{1F446}';
 
-        // Gentle bob animation inside SVG
         var anim = document.createElementNS('http://www.w3.org/2000/svg', 'animateTransform');
         anim.setAttribute('attributeName', 'transform');
         anim.setAttribute('type', 'translate');
         anim.setAttribute('values', '0,0;0,-6;0,0');
-        anim.setAttribute('dur', '2.5s');
+        anim.setAttribute('dur', FLOAT_BOB_DUR);
         anim.setAttribute('repeatCount', 'indefinite');
         cursor.appendChild(anim);
 
@@ -77,33 +133,40 @@
     });
   }
 
-  // ── Remove cursor hints from an SVG ──
-  function removeCursors(wrapper) {
+  function removeAllCursors() {
+    document.querySelectorAll('.cursor-hint-svg').forEach(function (c) { c.remove(); });
+  }
+
+  function removeCursorsFrom(wrapper) {
     if (!wrapper) return;
-    // Remove from SVG inside wrapper
     wrapper.querySelectorAll('.cursor-hint-svg').forEach(function (c) {
       c.style.opacity = '0';
       setTimeout(function () { c.remove(); }, 300);
     });
   }
 
-  // ── Handle clickable interaction ──
+  // ═══ CLICK & TRANSITION HANDLERS ═══
+
   function handleClick(element, target) {
     transitioning = true;
     var svg = element.closest('svg');
     var wrapper = svg.closest('.scene-graphic-wrapper');
-    removeCursors(wrapper);
+    var stepNum = parseInt(svg.id.replace('scene-', ''));
+    removeCursorsFrom(wrapper);
+
+    log('Step ' + stepNum + ' → ' + target + ' triggered');
+    trackEvent('hotspot_clicked', { step_number: stepNum, scene_layer: target });
 
     zoomInto(element, function () {
       showSubScene(svg, target);
       setTimeout(function () {
         transitioning = false;
-        positionAllCursors();
+        // Re-position cursors only in this SVG
+        positionCursorsIn(svg);
       }, 600);
     });
   }
 
-  // ── Zoom transition ──
   function zoomInto(element, callback) {
     var rect = element.getBoundingClientRect();
     var svgRect = element.closest('svg').getBoundingClientRect();
@@ -129,33 +192,25 @@
     }, 520);
   }
 
-  // ── Show sub-scene ──
+  // ═══ SCENE NAVIGATION ═══
+
+  var hintMap = {
+    'scene4layer2': 'Tap the EVM to cast your vote',
+    'scene4layer3': 'Watch your vote being recorded...'
+  };
+
   function showSubScene(svg, target) {
     var stepNum = parseInt(svg.id.replace('scene-', ''));
-    var content = null;
-
-    if (target === 'scene1sub' && S.scene1) content = S.scene1.sub();
-    else if (target === 'scene2sub' && S.scene2) content = S.scene2.sub();
-    else if (target === 'scene3sub' && S.scene3) content = S.scene3.sub();
-    else if (target === 'scene4layer2' && S.scene4) content = S.scene4.layer2();
-    else if (target === 'scene4layer3' && S.scene4) content = S.scene4.layer3();
-    else if (target === 'scene5sub' && S.scene5) content = S.scene5.sub();
-    else if (target === 'scene6sub' && S.scene6) content = S.scene6.sub();
-    else if (target === 'scene7sub' && S.scene7) content = S.scene7.sub();
+    var content = getSubContent(target);
 
     if (content) {
       svg.innerHTML = content;
-      bindAllClickables();
+      bindClickablesIn(svg);
+      announce('Scene updated');
 
       // Update hint text
       var section = svg.closest('.step-section');
       var hint = section ? section.querySelector('.tap-hint') : null;
-      var hintMap = {
-        'scene4layer2': 'Tap the EVM to cast your vote',
-        'scene4layer3': 'Watch your vote being recorded...',
-        'scene1sub': '', 'scene2sub': '', 'scene3sub': '',
-        'scene5sub': '', 'scene6sub': '', 'scene7sub': ''
-      };
       if (hint && hintMap.hasOwnProperty(target)) {
         hint.textContent = hintMap[target];
       }
@@ -168,6 +223,7 @@
           setTimeout(function () { scrollToStep(5); }, 3000);
         } else if (target === 'scene7sub') {
           setTimeout(function () { showConfetti(); showFinalMessage(); }, 2000);
+          trackEvent('journey_completed', {});
         } else {
           setTimeout(function () { scrollToStep(stepNum + 1); }, 1500);
         }
@@ -175,7 +231,25 @@
     }
   }
 
-  // ── Animate vote (Step 4 Layer 3) ──
+  function getSubContent(target) {
+    if (target === 'scene1sub' && S.scene1) return S.scene1.sub();
+    if (target === 'scene2sub' && S.scene2) return S.scene2.sub();
+    if (target === 'scene3sub' && S.scene3) return S.scene3.sub();
+    if (target === 'scene4layer2' && S.scene4) return S.scene4.layer2();
+    if (target === 'scene4layer3' && S.scene4) return S.scene4.layer3();
+    if (target === 'scene5sub' && S.scene5) return S.scene5.sub();
+    if (target === 'scene6sub' && S.scene6) return S.scene6.sub();
+    if (target === 'scene7sub' && S.scene7) return S.scene7.sub();
+    return null;
+  }
+
+  function scrollToStep(num) {
+    var el = document.getElementById('step-' + num);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // ═══ ANIMATIONS ═══
+
   function animateVote(svg) {
     setTimeout(function () {
       var btn = svg.getElementById('evm-btn-2');
@@ -189,18 +263,18 @@
         slip.innerHTML = '<rect x="405" y="130" width="100" height="50" fill="#FFF5C8" stroke="#7B4019" stroke-width="1" rx="2"/>' +
           '<circle cx="425" cy="155" r="8" fill="#E8622A"/>' +
           '<text x="440" y="150" font-family="Georgia" font-size="11" fill="#7B4019">Circle Party</text>' +
-          '<text x="440" y="165" font-family="Georgia" font-size="13" fill="#E8622A" font-weight="bold">✓</text>';
+          '<text x="440" y="165" font-family="Georgia" font-size="13" fill="#E8622A" font-weight="bold">\u2713</text>';
         svg.appendChild(slip);
       }, 800);
     }, 500);
   }
 
-  // ── Confetti ──
   function showConfetti() {
     var container = document.getElementById('confetti-container');
     if (!container) return;
     var colors = ['#E8622A', '#7B4019', '#F0A868', '#C49A6C', '#FFF5C8'];
-    for (var i = 0; i < 40; i++) {
+    var fragment = document.createDocumentFragment();
+    for (var i = 0; i < CONFETTI_COUNT; i++) {
       var p = document.createElement('div');
       p.className = 'confetti-piece';
       p.style.left = Math.random() * 100 + '%';
@@ -209,8 +283,9 @@
       p.style.animationDelay = Math.random() * 1.5 + 's';
       p.style.width = (5 + Math.random() * 6) + 'px';
       p.style.height = (5 + Math.random() * 6) + 'px';
-      container.appendChild(p);
+      fragment.appendChild(p);
     }
+    container.appendChild(fragment);
     setTimeout(function () { container.innerHTML = ''; }, 5000);
   }
 
@@ -219,31 +294,72 @@
     if (msg) setTimeout(function () { msg.classList.add('visible'); }, 1000);
   }
 
-  function scrollToStep(num) {
-    var el = document.getElementById('step-' + num);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // ═══ ACCESSIBILITY ═══
+
+  function announce(text) {
+    var el = document.getElementById('sr-announcer');
+    if (el) {
+      el.textContent = '';
+      setTimeout(function () { el.textContent = text; }, 100);
+    }
   }
 
-  // ── Scroll Observer ──
+  // ═══ SCROLL OBSERVER ═══
+
   function setupScrollObserver() {
     var observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
-        if (entry.isIntersecting) entry.target.classList.add('in-view');
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          var step = parseInt(entry.target.dataset.step);
+          if (step) {
+            renderScene(step);
+            renderScene(step + 1); // pre-render next
+            log('Step ' + step + ' in view');
+            trackEvent('step_viewed', {
+              step_number: step,
+              step_name: SCENES[step - 1].title
+            });
+          }
+          observer.unobserve(entry.target); // stop watching after triggered
+        }
       });
     }, { threshold: 0.3 });
-    document.querySelectorAll('.step-section').forEach(function (s) { observer.observe(s); });
+
+    document.querySelectorAll('.step-section').forEach(function (s) {
+      observer.observe(s);
+    });
   }
 
-  // ── Reposition cursors on resize ──
+  // ═══ ANALYTICS (GA4) ═══
+
+  function trackEvent(name, params) {
+    if (typeof gtag === 'function') {
+      gtag('event', name, params || {});
+    }
+    log('Event: ' + name + ' ' + JSON.stringify(params || {}));
+  }
+
+  // ═══ RESIZE ═══
+
   var resizeTimer;
   window.addEventListener('resize', function () {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(positionAllCursors, 200);
+    resizeTimer = setTimeout(function () {
+      removeAllCursors();
+      document.querySelectorAll('.scene-graphic').forEach(function (svg) {
+        if (svg.children.length > 0) positionCursorsIn(svg);
+      });
+    }, 200);
   });
 
-  // ── Boot ──
+  // ═══ BOOT ═══
+
   document.addEventListener('DOMContentLoaded', function () {
-    initScenes();
+    log('Booting...');
+    // Render first scene immediately (others lazy-loaded by observer)
+    renderScene(1);
     setupScrollObserver();
+    log('Ready');
   });
 })();
