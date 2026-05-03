@@ -58,7 +58,20 @@ body { background: #FAF3E8; color: #7B4019; font-family: system-ui, -apple-syste
 }
 .intro-section h1 { font-family: Georgia, serif; font-size: 36px; color: #7B4019; margin-bottom: 12px; letter-spacing: -0.5px; }
 .intro-section .subtitle { font-size: 15px; color: #A06030; max-width: 400px; line-height: 1.6; margin-bottom: 32px; }
-.intro-section .scroll-hint { font-size: 12px; color: #E8622A; font-style: italic; letter-spacing: 1px; animation: float 3s ease-in-out infinite; }
+.intro-section .scroll-btn {
+  font-size: 14px; font-family: Georgia, serif; font-weight: bold;
+  color: #FFF5C8; background: #E8622A; border: none; cursor: pointer;
+  padding: 12px 32px; border-radius: 24px; letter-spacing: 0.5px;
+  animation: float 3s ease-in-out infinite;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.intro-section .scroll-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(232,98,42,0.35);
+}
+.intro-section .scroll-btn:focus-visible {
+  outline: 2px solid #7B4019; outline-offset: 3px;
+}
 
 /* --- Step Section Layout --- */
 .step-section {

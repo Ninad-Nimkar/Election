@@ -357,9 +357,17 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     log('Booting...');
-    // Render first scene immediately (others lazy-loaded by observer)
     renderScene(1);
     setupScrollObserver();
+
+    // "Begin the Journey" button
+    var beginBtn = document.getElementById('scroll-begin');
+    if (beginBtn) {
+      beginBtn.addEventListener('click', function () {
+        document.getElementById('step-1').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+
     log('Ready');
   });
 })();
