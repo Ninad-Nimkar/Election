@@ -2,8 +2,9 @@
 <!-- Google Services used:
      - Google Fonts API (Playfair Display)
      - Google Analytics 4 (GA4) with custom events
+     - Google Cloud Natural Language API (civics quiz sentiment analysis)
      - Google Cloud Run (deployment)
-     - Google Cloud Build (CI/CD)
+     - Google Cloud Build (CI/CD pipeline with test stage)
      - Google Container Registry (image hosting)
 -->
 <html lang="en">
@@ -12,7 +13,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="An interactive visual guide to how Indian elections work — from announcement to oath of office.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; img-src 'self' data:;">
+  <meta name="color-scheme" content="light">
   <title>How India Votes — An Interactive Election Explainer</title>
+  <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+  <link rel="dns-prefetch" href="https://language.googleapis.com">
+  <link rel="preconnect" href="https://www.googletagmanager.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -96,8 +101,9 @@
         </svg>
       </div>
       <p class="step-description">Voters queue at their polling station, enter the booth, and cast their vote on the EVM.</p>
-      <span class="tap-hint">Tap the booth to enter</span>
+      <span class="tap-hint">Tap the raised hand</span>
     </section>
+
 
     <section class="step-section" id="step-5" data-step="5"
              aria-label="Step 5 of 7: Vote Counting"
@@ -143,8 +149,28 @@
           <title id="scene-7-title">Elected representative taking oath at podium</title>
         </svg>
       </div>
-      <p class="step-description">The elected representative takes the oath and begins serving the people.</p>
-      <span class="tap-hint">Tap the raised hand to complete</span>
+      <p class="step-description">The newly elected representative takes their oath, concluding the democratic process.</p>
+      <span class="tap-hint">Tap the raised hand</span>
+    </section>
+
+    <section class="step-section" id="step-quiz" data-step="quiz" aria-label="Civics Quiz">
+      <span class="step-label">Bonus</span>
+      <h2 class="step-title">Quick Civics Check</h2>
+      <div class="quiz-card">
+        <p>In your own words — why does your vote matter?</p>
+        <textarea id="quiz-input" rows="3" maxlength="200"
+          placeholder="Type your answer..."
+          aria-label="Your answer to the civics question"
+          data-testid="quiz-input">
+        </textarea>
+        <button id="quiz-submit" data-testid="quiz-submit"
+          aria-label="Submit your answer">
+          Analyse with AI ✦
+        </button>
+        <div id="quiz-result" aria-live="polite" data-testid="quiz-result"></div>
+      </div>
+    </section>
+
       <div class="final-message" id="final-message" data-testid="final-message">
         <p>Democracy complete. Your vote built this.</p>
         <svg class="fingerprint-icon" viewBox="0 0 32 32" aria-hidden="true">
@@ -154,7 +180,6 @@
           <path d="M16 14 C14.5 14 14 15 14 16 C14 18 15 20 16 20" fill="none" stroke="#E8622A" stroke-width="0.8"/>
         </svg>
       </div>
-    </section>
   </main>
 
   <div class="confetti-container" id="confetti-container" aria-hidden="true"></div>
@@ -163,6 +188,7 @@
   <script src="scene1.js" defer></script>
   <script src="scene2.js" defer></script>
   <script src="scene3.js" defer></script>
+  <script src="api.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>

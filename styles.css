@@ -161,6 +161,71 @@ body { background: #FAF3E8; color: #7B4019; font-family: system-ui, -apple-syste
 .final-message p { font-family: 'Playfair Display', Georgia, serif; font-size: 18px; color: #7B4019; margin-bottom: 12px; }
 .final-message .fingerprint-icon { width: 32px; height: 32px; margin: 0 auto; }
 
+/* --- Quiz Section --- */
+.quiz-card {
+  background-color: #FFF5C8;
+  border: 1px solid #C49A6C;
+  border-radius: 8px;
+  padding: 24px;
+  margin: 0 auto 32px;
+  max-width: 480px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(123, 64, 25, 0.1);
+}
+.quiz-card p {
+  font-family: Georgia, serif;
+  font-size: 16px;
+  color: #7B4019;
+  margin-bottom: 16px;
+  font-weight: bold;
+}
+#quiz-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #C49A6C;
+  border-radius: 4px;
+  background-color: #FAEBD7;
+  color: #7B4019;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  resize: vertical;
+  margin-bottom: 16px;
+}
+#quiz-input:focus {
+  outline: none;
+  border-color: #E8622A;
+  box-shadow: 0 0 0 2px rgba(232, 98, 42, 0.2);
+}
+#quiz-submit {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 14px;
+  font-weight: bold;
+  color: #FFF5C8;
+  background-color: #7B4019;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+}
+#quiz-submit:hover {
+  background-color: #A06030;
+  transform: translateY(-1px);
+}
+#quiz-submit:focus-visible {
+  outline: 2px solid #E8622A;
+  outline-offset: 2px;
+}
+#quiz-result {
+  margin-top: 16px;
+  font-family: Georgia, serif;
+  font-size: 14px;
+  color: #E8622A;
+  font-style: italic;
+  min-height: 20px;
+}
+
 /* --- SVG Animation Classes --- */
 .stamp-text { animation: stamp-in 0.5s ease-out forwards; transform-origin: center center; }
 .tick-mark { stroke-dasharray: 30; stroke-dashoffset: 30; animation: tick-draw 0.6s ease-out forwards; }

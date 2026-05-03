@@ -36,7 +36,10 @@
 
   // ═══ RENDER FUNCTIONS ═══
 
-  // Render a scene's main SVG content (lazy — only when needed)
+  /**
+   * Render a scene's main SVG content lazily.
+   * @param {number} stepNum - The step number (1-7) to render
+   */
   function renderScene(stepNum) {
     if (stepNum < 1 || stepNum > 7) return;
     if (renderedScenes[stepNum]) return;
@@ -145,8 +148,13 @@
     });
   }
 
-  // ═══ CLICK & TRANSITION HANDLERS ═══
+  // ═══ CLICK & TRANSITION ═══
 
+  /**
+   * Handles click events on scene hotspots.
+   * @param {HTMLElement} element - The clicked hotspot element
+   * @param {string} target - The key of the next scene layer to load
+   */
   function handleClick(element, target) {
     transitioning = true;
     var svg = element.closest('svg');
@@ -168,6 +176,11 @@
     });
   }
 
+  /**
+   * Zooms into a clicked SVG hotspot and transitions to the next scene layer.
+   * @param {SVGElement} element - The clicked hotspot element
+   * @param {Function} nextScene - Callback to render the next scene layer
+   */
   function zoomInto(element, callback) {
     var rect = element.getBoundingClientRect();
     var svgRect = element.closest('svg').getBoundingClientRect();
@@ -193,7 +206,7 @@
     }, 520);
   }
 
-  // ═══ SCENE NAVIGATION ═══
+  // ═══ NAVIGATION ═══
 
   var hintMap = {
     'scene4layer2': 'Tap the EVM to cast your vote',
@@ -305,27 +318,37 @@
     }
   }
 
-  // ═══ SCROLL OBSERVER ═══
+  // ═══ OBSERVER (Lazy Loading) ═══
 
+  /**
+   * Sets up the IntersectionObserver to lazy load scenes.
+   * Only injects SVG when the section is about to be needed.
+   */
   function setupScrollObserver() {
-    var observer = new IntersectionObserver(function (entries) {
+    var options = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.8
+    };
+
+    var observer = new IntersectionObserver(function (entries, obs) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
-          entry.target.classList.add('in-view');
-          var step = parseInt(entry.target.dataset.step);
-          if (step) {
-            renderScene(step);
-            renderScene(step + 1); // pre-render next
+          var step = parseInt(entry.target.getAttribute('data-step'), 10);
+          if (!isNaN(step)) {
+            // Track view
+            trackEvent('step_viewed', { step_number: step, step_name: SCENES[step - 1] ? SCENES[step - 1].title : 'unknown' });
             log('Step ' + step + ' in view');
-            trackEvent('step_viewed', {
-              step_number: step,
-              step_name: SCENES[step - 1].title
-            });
+            
+            // Lazy load the next scene
+            if (step < 7) {
+              renderScene(step + 1);
+            }
           }
-          observer.unobserve(entry.target); // stop watching after triggered
+          obs.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.3 });
+    }, options);
 
     document.querySelectorAll('.step-section').forEach(function (s) {
       observer.observe(s);
@@ -371,6 +394,47 @@
 
     // Track device type on load
     trackEvent('app_loaded', { device: /Mobi/.test(navigator.userAgent) ? 'mobile' : 'desktop' });
+
+    // Quiz logic
+    var quizSubmitBtn = document.getElementById('quiz-submit');
+    if (quizSubmitBtn) {
+      quizSubmitBtn.addEventListener('click', async function () {
+        var inputEl = document.getElementById('quiz-input');
+        var resultEl = document.getElementById('quiz-result');
+        if (!inputEl || !resultEl) return;
+        
+        var answer = inputEl.value.trim();
+        if (!answer) {
+          resultEl.textContent = 'Please share your thoughts before submitting.';
+          return;
+        }
+
+        quizSubmitBtn.textContent = 'Analysing...';
+        quizSubmitBtn.disabled = true;
+
+        if (typeof analyzeQuizAnswer === 'function') {
+          var sentiment = await analyzeQuizAnswer(answer);
+          if (sentiment) {
+            if (sentiment.score > 0.2) {
+              resultEl.textContent = 'Your answer shows strong civic awareness and optimism! 🗳️';
+            } else if (sentiment.score < -0.2) {
+              resultEl.textContent = 'It sounds like you have concerns, but participating is how we drive change. 🗳️';
+            } else {
+              resultEl.textContent = 'Thanks for reflecting on the importance of your vote. 🗳️';
+            }
+          } else {
+            resultEl.textContent = 'Thanks for sharing your thoughts! 🗳️';
+          }
+        } else {
+          resultEl.textContent = 'Thanks for sharing your thoughts! 🗳️';
+        }
+
+        quizSubmitBtn.textContent = 'Analyse with AI ✦';
+        quizSubmitBtn.disabled = false;
+        
+        trackEvent('quiz_submitted', { answer_length: answer.length });
+      });
+    }
 
     log('Ready');
   });
