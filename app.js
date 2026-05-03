@@ -49,7 +49,7 @@
     // Safety note: innerHTML is used here with hardcoded SVG content only.
     // No user-controlled or external data is ever injected.
     var titleEl = svg.querySelector('title');
-    var titleHTML = titleEl ? '' : '<title id="scene-' + stepNum + '-title">' + meta.svgTitle + '</title>';
+    var titleHTML = titleEl ? titleEl.outerHTML : '<title id="scene-' + stepNum + '-title">' + meta.svgTitle + '</title>';
     svg.innerHTML = titleHTML + data.main();
 
     renderedScenes[stepNum] = true;

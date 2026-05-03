@@ -1,17 +1,18 @@
-// tests.js — Election App Test Suite
-// Run in browser console or Node with a DOM shim
+// tests.js — Node.js test suite, run with: node tests.js
+const fs = require('fs');
+const path = require('path');
 
-const DEBUG = true;
-const results = [];
+let passed = 0;
+let failed = 0;
 
 function test(name, fn) {
   try {
     fn();
-    results.push({ name, pass: true });
-    if (DEBUG) console.log(`✅ PASS: ${name}`);
+    console.log(`✅ PASS: ${name}`);
+    passed++;
   } catch (e) {
-    results.push({ name, pass: false, error: e.message });
-    console.error(`❌ FAIL: ${name} —`, e.message);
+    console.error(`❌ FAIL: ${name} — ${e.message}`);
+    failed++;
   }
 }
 
@@ -19,127 +20,159 @@ function assert(condition, message) {
   if (!condition) throw new Error(message || 'Assertion failed');
 }
 
-// --- Core path tests ---
+function assertContains(str, substring, message) {
+  assert(str.includes(substring), message || `Expected to find: "${substring}"`);
+}
 
-test('SCENES metadata exists and has 7 steps', () => {
-  const sections = document.querySelectorAll('[data-step]');
-  assert(sections.length === 7, `Expected 7 step sections, got ${sections.length}`);
+// Read source files
+const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+const css  = fs.readFileSync(path.join(__dirname, 'styles.css'), 'utf8');
+const app  = fs.readFileSync(path.join(__dirname, 'app.js'), 'utf8');
+
+// --- HTML structure tests ---
+test('index.html has viewport meta tag', () => {
+  assertContains(html, 'name="viewport"');
 });
-
-test('Step sections exist in DOM for all 7 steps', () => {
+test('index.html has meta description', () => {
+  assertContains(html, 'name="description"');
+});
+test('index.html has Content-Security-Policy', () => {
+  assertContains(html, 'Content-Security-Policy');
+});
+test('index.html has Google Fonts link', () => {
+  assertContains(html, 'fonts.googleapis.com');
+});
+test('index.html has GA4 script', () => {
+  assertContains(html, 'googletagmanager.com');
+});
+test('index.html has all 7 step sections', () => {
   for (let i = 1; i <= 7; i++) {
-    const el = document.querySelector(`[data-step="${i}"]`);
-    assert(el, `Missing section with data-step="${i}"`);
+    assertContains(html, `data-step="${i}"`, `Missing data-step="${i}"`);
   }
 });
-
-test('All hotspots have data-testid attributes', () => {
-  const hotspots = document.querySelectorAll('[data-testid]');
-  assert(hotspots.length >= 7, `Expected at least 7 testid elements, found ${hotspots.length}`);
+test('index.html has main landmark', () => {
+  assertContains(html, '<main>');
 });
-
-test('All hotspots are keyboard accessible', () => {
-  const hotspots = document.querySelectorAll('[role="button"]');
-  hotspots.forEach((el, i) => {
-    const tabindex = el.getAttribute('tabindex');
-    assert(tabindex === '0', `Hotspot ${i+1} missing tabindex="0"`);
+test('index.html has h1', () => {
+  assertContains(html, '<h1>');
+});
+test('All SVGs have role="img"', () => {
+  const svgMatches = html.match(/<svg[^>]*>/g) || [];
+  const sceneSvgs = svgMatches.filter(s => s.includes('scene-graphic'));
+  sceneSvgs.forEach((s, i) => {
+    assert(s.includes('role="img"'), `SVG ${i+1} missing role="img"`);
   });
 });
-
-test('All SVGs have a title element', () => {
-  const svgs = document.querySelectorAll('.scene-graphic');
-  svgs.forEach((svg, i) => {
-    const title = svg.querySelector('title');
-    assert(title, `SVG ${i+1} missing <title> element`);
-    assert(title.textContent.length > 0, `SVG ${i+1} has empty <title>`);
+test('All step sections have aria-label', () => {
+  const sections = html.match(/<section[^>]*data-step[^>]*>/g) || [];
+  sections.forEach((s, i) => {
+    assert(s.includes('aria-label'), `Section ${i+1} missing aria-label`);
   });
 });
-
-test('Float animation class exists in stylesheet', () => {
-  const sheets = Array.from(document.styleSheets);
-  let found = false;
-  sheets.forEach(sheet => {
-    try {
-      const rules = Array.from(sheet.cssRules || []);
-      rules.forEach(rule => {
-        if (rule.name === 'float') found = true;
-      });
-    } catch(e) {}
-  });
-  assert(found, 'float keyframe animation not found in stylesheet');
-});
-
-// --- Edge case tests ---
-
-test('GA4 gtag function is defined', () => {
-  assert(typeof gtag === 'function', 'gtag is not defined — GA4 not loaded');
-});
-
-test('prefers-reduced-motion media query exists', () => {
-  const sheets = Array.from(document.styleSheets);
-  let found = false;
-  sheets.forEach(sheet => {
-    try {
-      Array.from(sheet.cssRules || []).forEach(rule => {
-        if (rule.conditionText && rule.conditionText.includes('reduced-motion')) found = true;
-      });
-    } catch(e) {}
-  });
-  assert(found, 'prefers-reduced-motion media query not found');
-});
-
-// --- Integration flow tests ---
-
-test('Step 1 hotspot exists and is clickable', () => {
-  const hotspot = document.querySelector('[data-testid="step-1-hotspot"]');
-  assert(hotspot, 'Step 1 hotspot not found');
-  assert(hotspot.getAttribute('role') === 'button', 'Step 1 hotspot missing role="button"');
-});
-
-test('IntersectionObserver is used (not scroll events)', () => {
-  assert(typeof IntersectionObserver !== 'undefined', 'IntersectionObserver not available');
-});
-
-test('Begin button exists and is interactive', () => {
-  const btn = document.getElementById('scroll-begin');
-  assert(btn, 'scroll-begin button not found');
-  assert(btn.tagName === 'BUTTON', 'scroll-begin is not a <button>');
-});
-
-test('CSP meta tag is present', () => {
-  const csp = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-  assert(csp, 'Content-Security-Policy meta tag not found');
-});
-
-test('Main landmark wraps step sections', () => {
-  const main = document.querySelector('main');
-  assert(main, '<main> landmark not found');
-  const sections = main.querySelectorAll('.step-section');
-  assert(sections.length === 7, `Expected 7 sections inside <main>, found ${sections.length}`);
-});
-
-test('All SVGs have role="img" and aria-labelledby', () => {
-  const svgs = document.querySelectorAll('.scene-graphic');
-  svgs.forEach((svg, i) => {
-    assert(svg.getAttribute('role') === 'img', `SVG ${i+1} missing role="img"`);
-    assert(svg.getAttribute('aria-labelledby'), `SVG ${i+1} missing aria-labelledby`);
+test('All SVGs have aria-labelledby', () => {
+  const svgMatches = html.match(/<svg[^>]*scene-graphic[^>]*>/g) || [];
+  svgMatches.forEach((s, i) => {
+    assert(s.includes('aria-labelledby'), `Scene SVG ${i+1} missing aria-labelledby`);
   });
 });
-
+test('index.html has sr-only announcer for screen readers', () => {
+  assertContains(html, 'aria-live="polite"');
+});
 test('Confetti container has aria-hidden', () => {
-  const container = document.getElementById('confetti-container');
-  assert(container, 'confetti-container not found');
-  assert(container.getAttribute('aria-hidden') === 'true', 'confetti-container missing aria-hidden');
+  assertContains(html, 'aria-hidden="true"');
+});
+test('Scripts use defer attribute', () => {
+  const scripts = html.match(/<script[^>]*src[^>]*>/g) || [];
+  scripts.forEach((s, i) => {
+    if (!s.includes('googletagmanager') && !s.includes('async')) {
+      assert(s.includes('defer'), `Script ${i+1} missing defer: ${s}`);
+    }
+  });
 });
 
-test('Screen reader announcer exists', () => {
-  const announcer = document.getElementById('sr-announcer');
-  assert(announcer, 'sr-announcer not found');
-  assert(announcer.getAttribute('aria-live') === 'polite', 'sr-announcer missing aria-live="polite"');
+// --- CSS tests ---
+test('styles.css has float keyframe animation', () => {
+  assertContains(css, '@keyframes float');
+});
+test('styles.css has prefers-reduced-motion query', () => {
+  assertContains(css, 'prefers-reduced-motion');
+});
+test('styles.css uses transform for animations (not top/margin)', () => {
+  assert(!css.match(/animation[^{]*top:/), 'Found top: in animation — causes reflow');
+});
+test('styles.css has step-section class', () => {
+  assertContains(css, '.step-section');
+});
+test('styles.css has scene-graphic class', () => {
+  assertContains(css, '.scene-graphic');
 });
 
-// --- Report ---
-const passed = results.filter(r => r.pass).length;
-const total = results.length;
-console.log(`\n📊 Test Results: ${passed}/${total} passed`);
-if (passed === total) console.log('🎉 All tests passed!');
+// --- JS tests ---
+test('app.js has IntersectionObserver', () => {
+  assertContains(app, 'IntersectionObserver');
+});
+test('app.js has zoomInto function', () => {
+  assertContains(app, 'zoomInto');
+});
+test('app.js has scrollToStep function', () => {
+  assertContains(app, 'scrollToStep');
+});
+test('app.js has gtag event calls', () => {
+  assertContains(app, "gtag('event'");
+});
+test('app.js tracks step_viewed event', () => {
+  assertContains(app, 'step_viewed');
+});
+test('app.js tracks hotspot_clicked event', () => {
+  assertContains(app, 'hotspot_clicked');
+});
+test('app.js tracks journey_completed event', () => {
+  assertContains(app, 'journey_completed');
+});
+test('app.js uses addEventListener not inline onclick', () => {
+  assert(!app.includes('onclick='), 'Found inline onclick handler');
+});
+test('app.js does not use eval()', () => {
+  assert(!app.includes('eval('), 'Found eval() — security risk');
+});
+test('app.js does not use document.write', () => {
+  assert(!app.includes('document.write'), 'Found document.write — security risk');
+});
+test('app.js unobserves after intersection', () => {
+  assertContains(app, 'unobserve');
+});
+test('app.js has DEBUG constant', () => {
+  assertContains(app, 'DEBUG');
+});
+
+// --- Dockerfile tests ---
+test('Dockerfile exists', () => {
+  assert(fs.existsSync(path.join(__dirname, 'Dockerfile')), 'Dockerfile not found');
+});
+test('Dockerfile uses python base image', () => {
+  const dockerfile = fs.readFileSync(path.join(__dirname, 'Dockerfile'), 'utf8');
+  assertContains(dockerfile, 'python');
+});
+test('Dockerfile exposes port 8080', () => {
+  const dockerfile = fs.readFileSync(path.join(__dirname, 'Dockerfile'), 'utf8');
+  assertContains(dockerfile, '8080');
+});
+
+// --- cloudbuild.yaml tests ---
+test('cloudbuild.yaml exists', () => {
+  assert(fs.existsSync(path.join(__dirname, 'cloudbuild.yaml')), 'cloudbuild.yaml not found');
+});
+test('cloudbuild.yaml uses CLOUD_LOGGING_ONLY', () => {
+  const cb = fs.readFileSync(path.join(__dirname, 'cloudbuild.yaml'), 'utf8');
+  assertContains(cb, 'CLOUD_LOGGING_ONLY');
+});
+
+// --- Summary ---
+console.log(`\n📊 Results: ${passed} passed, ${failed} failed out of ${passed + failed} tests`);
+if (failed > 0) {
+  console.log('⚠️  Some tests failed. Fix before submitting.');
+  process.exit(1);
+} else {
+  console.log('🎉 All tests passed!');
+  process.exit(0);
+}

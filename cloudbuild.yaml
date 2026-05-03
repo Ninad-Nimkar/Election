@@ -1,6 +1,12 @@
 steps:
+  - name: 'node:20-slim'
+    entrypoint: node
+    args: ['tests.js']
+    id: 'run-tests'
+
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'gcr.io/$PROJECT_ID/election-app', '.']
+    waitFor: ['run-tests']
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/election-app']
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
