@@ -359,7 +359,9 @@
 
   function trackEvent(name, params) {
     if (typeof gtag === 'function') {
-      gtag('event', name, params || {});
+      gtag('event', name, Object.assign({
+        'send_to': 'G-X6JQFCEEWL'
+      }, params || {}));
     }
     log('Event: ' + name + ' ' + JSON.stringify(params || {}));
   }
