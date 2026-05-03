@@ -1,5 +1,6 @@
 // ═══════════════════════════════════════════
-// Election Explainer — Core App Logic
+// Election Explainer — Core App Logic v2
+// Cursor hints · zoom transitions · scroll
 // ═══════════════════════════════════════════
 
 (function () {
@@ -19,11 +20,14 @@
       }
     }
     bindAllClickables();
+    positionAllCursors();
   }
 
   // ── Bind click handlers ──
   function bindAllClickables() {
     document.querySelectorAll('[data-clickable]').forEach(function (el) {
+      if (el._bound) return;
+      el._bound = true;
       el.addEventListener('click', function (e) {
         e.stopPropagation();
         if (transitioning) return;
@@ -33,15 +37,69 @@
     });
   }
 
+  // ── Position floating cursor hints (inside SVG so they float with it) ──
+  function positionAllCursors() {
+    // Remove old cursors
+    document.querySelectorAll('.cursor-hint-svg').forEach(function (c) { c.remove(); });
+
+    document.querySelectorAll('.scene-graphic [data-clickable]').forEach(function (el) {
+      var svg = el.closest('svg');
+      if (!svg) return;
+
+      var hintEl = el.querySelector('.clickable-hint') || el;
+
+      try {
+        var bbox = hintEl.getBBox();
+        var cx = bbox.x + bbox.width / 2;
+        var cy = bbox.y + 45; // fingertip touches top edge of clickable
+
+        var cursor = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        cursor.setAttribute('class', 'cursor-hint-svg');
+        cursor.setAttribute('x', cx);
+        cursor.setAttribute('y', cy);
+        cursor.setAttribute('text-anchor', 'middle');
+        cursor.setAttribute('font-size', '28');
+        cursor.setAttribute('pointer-events', 'none');
+        cursor.setAttribute('style', 'filter: drop-shadow(0 2px 4px rgba(123,64,25,0.3))');
+        cursor.textContent = '👆';
+
+        // Gentle bob animation inside SVG
+        var anim = document.createElementNS('http://www.w3.org/2000/svg', 'animateTransform');
+        anim.setAttribute('attributeName', 'transform');
+        anim.setAttribute('type', 'translate');
+        anim.setAttribute('values', '0,0;0,-6;0,0');
+        anim.setAttribute('dur', '2.5s');
+        anim.setAttribute('repeatCount', 'indefinite');
+        cursor.appendChild(anim);
+
+        svg.appendChild(cursor);
+      } catch (e) { /* getBBox fails on hidden elements */ }
+    });
+  }
+
+  // ── Remove cursor hints from an SVG ──
+  function removeCursors(wrapper) {
+    if (!wrapper) return;
+    // Remove from SVG inside wrapper
+    wrapper.querySelectorAll('.cursor-hint-svg').forEach(function (c) {
+      c.style.opacity = '0';
+      setTimeout(function () { c.remove(); }, 300);
+    });
+  }
+
   // ── Handle clickable interaction ──
   function handleClick(element, target) {
     transitioning = true;
-    const svg = element.closest('svg');
-    const graphic = svg; // .scene-graphic is the svg itself
+    var svg = element.closest('svg');
+    var wrapper = svg.closest('.scene-graphic-wrapper');
+    removeCursors(wrapper);
 
     zoomInto(element, function () {
       showSubScene(svg, target);
-      setTimeout(function () { transitioning = false; }, 600);
+      setTimeout(function () {
+        transitioning = false;
+        positionAllCursors();
+      }, 600);
     });
   }
 
@@ -74,10 +132,8 @@
   // ── Show sub-scene ──
   function showSubScene(svg, target) {
     var stepNum = parseInt(svg.id.replace('scene-', ''));
-    var key = 'scene' + stepNum;
     var content = null;
 
-    // Determine which content to show
     if (target === 'scene1sub' && S.scene1) content = S.scene1.sub();
     else if (target === 'scene2sub' && S.scene2) content = S.scene2.sub();
     else if (target === 'scene3sub' && S.scene3) content = S.scene3.sub();
@@ -91,7 +147,7 @@
       svg.innerHTML = content;
       bindAllClickables();
 
-      // Update hint text for sub-layers
+      // Update hint text
       var section = svg.closest('.step-section');
       var hint = section ? section.querySelector('.tap-hint') : null;
       var hintMap = {
@@ -104,20 +160,14 @@
         hint.textContent = hintMap[target];
       }
 
-      // Check if this is a terminal sub-scene (no more clickables)
       var hasMore = svg.querySelector('[data-clickable]');
-
       if (!hasMore) {
         if (hint) hint.style.opacity = '0';
-        // Terminal scene — handle special cases
         if (target === 'scene4layer3') {
           animateVote(svg);
           setTimeout(function () { scrollToStep(5); }, 3000);
         } else if (target === 'scene7sub') {
-          setTimeout(function () {
-            showConfetti();
-            showFinalMessage();
-          }, 2000);
+          setTimeout(function () { showConfetti(); showFinalMessage(); }, 2000);
         } else {
           setTimeout(function () { scrollToStep(stepNum + 1); }, 1500);
         }
@@ -125,31 +175,22 @@
     }
   }
 
-  // ── Animate vote on EVM (Step 4 Layer 3) ──
+  // ── Animate vote (Step 4 Layer 3) ──
   function animateVote(svg) {
     setTimeout(function () {
-      // Highlight pressed button
       var btn = svg.getElementById('evm-btn-2');
-      if (btn) btn.setAttribute('fill', '#F0A868');
-
-      // Show button glow
+      if (btn) btn.setAttribute('fill', '#E8622A');
       var glow = svg.querySelector('.glow-btn');
-      if (glow) {
-        glow.setAttribute('opacity', '1');
-        glow.setAttribute('fill', '#E8622A');
-      }
+      if (glow) { glow.setAttribute('opacity', '1'); glow.setAttribute('fill', '#E8622A'); }
 
-      // Add VVPAT slip
       setTimeout(function () {
-        var vvpat = svg.querySelector('rect[x="50"][y="210"]');
-        if (vvpat) {
-          var slip = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-          slip.classList.add('slip-printing');
-          slip.innerHTML = '<rect x="60" y="235" width="110" height="28" fill="#FFF5C8" stroke="#7B4019" stroke-width="0.8" rx="2"/>' +
-            '<circle cx="80" cy="249" r="5" fill="#E8622A"/>' +
-            '<text x="95" y="252" font-family="system-ui" font-size="7" fill="#7B4019">Circle Party ✓</text>';
-          svg.appendChild(slip);
-        }
+        var slip = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        slip.classList.add('slip-printing');
+        slip.innerHTML = '<rect x="405" y="130" width="100" height="50" fill="#FFF5C8" stroke="#7B4019" stroke-width="1" rx="2"/>' +
+          '<circle cx="425" cy="155" r="8" fill="#E8622A"/>' +
+          '<text x="440" y="150" font-family="Georgia" font-size="11" fill="#7B4019">Circle Party</text>' +
+          '<text x="440" y="165" font-family="Georgia" font-size="13" fill="#E8622A" font-weight="bold">✓</text>';
+        svg.appendChild(slip);
       }, 800);
     }, 500);
   }
@@ -159,61 +200,50 @@
     var container = document.getElementById('confetti-container');
     if (!container) return;
     var colors = ['#E8622A', '#7B4019', '#F0A868', '#C49A6C', '#FFF5C8'];
-
     for (var i = 0; i < 40; i++) {
-      var piece = document.createElement('div');
-      piece.className = 'confetti-piece';
-      piece.style.left = Math.random() * 100 + '%';
-      piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-      piece.style.animationDuration = (2 + Math.random() * 2) + 's';
-      piece.style.animationDelay = Math.random() * 1.5 + 's';
-      piece.style.width = (5 + Math.random() * 6) + 'px';
-      piece.style.height = (5 + Math.random() * 6) + 'px';
-      container.appendChild(piece);
+      var p = document.createElement('div');
+      p.className = 'confetti-piece';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      p.style.animationDuration = (2 + Math.random() * 2) + 's';
+      p.style.animationDelay = Math.random() * 1.5 + 's';
+      p.style.width = (5 + Math.random() * 6) + 'px';
+      p.style.height = (5 + Math.random() * 6) + 'px';
+      container.appendChild(p);
     }
-
-    setTimeout(function () {
-      container.innerHTML = '';
-    }, 5000);
+    setTimeout(function () { container.innerHTML = ''; }, 5000);
   }
 
-  // ── Final message ──
   function showFinalMessage() {
     var msg = document.getElementById('final-message');
-    if (msg) {
-      setTimeout(function () {
-        msg.classList.add('visible');
-      }, 1000);
-    }
+    if (msg) setTimeout(function () { msg.classList.add('visible'); }, 1000);
   }
 
-  // ── Scroll to step ──
   function scrollToStep(num) {
     var el = document.getElementById('step-' + num);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
-  // ── IntersectionObserver for scroll-in ──
+  // ── Scroll Observer ──
   function setupScrollObserver() {
     var observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('in-view');
-        }
+        if (entry.isIntersecting) entry.target.classList.add('in-view');
       });
     }, { threshold: 0.3 });
-
-    document.querySelectorAll('.step-section').forEach(function (section) {
-      observer.observe(section);
-    });
+    document.querySelectorAll('.step-section').forEach(function (s) { observer.observe(s); });
   }
+
+  // ── Reposition cursors on resize ──
+  var resizeTimer;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(positionAllCursors, 200);
+  });
 
   // ── Boot ──
   document.addEventListener('DOMContentLoaded', function () {
     initScenes();
     setupScrollObserver();
   });
-
 })();
