@@ -1,0 +1,12 @@
+{
+  "name": "election-explainer",
+  "version": "1.0.0",
+  "description": "Interactive Indian election process explainer",
+  "scripts": {
+    "test": "node tests.js",
+    "start": "python start.py"
+  },
+  "keywords": ["election", "india", "interactive", "civic-tech"],
+  "author": "Ninad Nimkar",
+  "license": "MIT"
+}
