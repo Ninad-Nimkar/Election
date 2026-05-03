@@ -56,7 +56,7 @@ body { background: #FAF3E8; color: #7B4019; font-family: system-ui, -apple-syste
   min-height: 100vh; display: flex; flex-direction: column;
   align-items: center; justify-content: center; padding: 40px 20px; text-align: center;
 }
-.intro-section h1 { font-family: Georgia, serif; font-size: 36px; color: #7B4019; margin-bottom: 12px; letter-spacing: -0.5px; }
+.intro-section h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 36px; color: #7B4019; margin-bottom: 12px; letter-spacing: -0.5px; }
 .intro-section .subtitle { font-size: 15px; color: #A06030; max-width: 400px; line-height: 1.6; margin-bottom: 32px; }
 .intro-section .scroll-btn {
   font-size: 14px; font-family: Georgia, serif; font-weight: bold;
@@ -101,7 +101,7 @@ body { background: #FAF3E8; color: #7B4019; font-family: system-ui, -apple-syste
   color: #A06030; font-family: system-ui, sans-serif; margin-bottom: 8px;
 }
 .step-title {
-  font-family: Georgia, serif; font-size: 26px; font-weight: bold;
+  font-family: 'Playfair Display', Georgia, serif; font-size: 26px; font-weight: bold;
   color: #7B4019; margin-bottom: 28px;
 }
 .step-description {
@@ -158,7 +158,7 @@ body { background: #FAF3E8; color: #7B4019; font-family: system-ui, -apple-syste
 /* --- Final Message --- */
 .final-message { margin-top: 40px; text-align: center; opacity: 0; transition: opacity 0.8s ease; }
 .final-message.visible { opacity: 1; }
-.final-message p { font-family: Georgia, serif; font-size: 18px; color: #7B4019; margin-bottom: 12px; }
+.final-message p { font-family: 'Playfair Display', Georgia, serif; font-size: 18px; color: #7B4019; margin-bottom: 12px; }
 .final-message .fingerprint-icon { width: 32px; height: 32px; margin: 0 auto; }
 
 /* --- SVG Animation Classes --- */

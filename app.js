@@ -156,6 +156,7 @@
 
     log('Step ' + stepNum + ' → ' + target + ' triggered');
     trackEvent('hotspot_clicked', { step_number: stepNum, scene_layer: target });
+    trackEvent('scene_transition', { from_step: stepNum, to_layer: target });
 
     zoomInto(element, function () {
       showSubScene(svg, target);
@@ -367,6 +368,9 @@
         document.getElementById('step-1').scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
     }
+
+    // Track device type on load
+    trackEvent('app_loaded', { device: /Mobi/.test(navigator.userAgent) ? 'mobile' : 'desktop' });
 
     log('Ready');
   });
